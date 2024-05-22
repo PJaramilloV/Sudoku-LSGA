@@ -1,3 +1,11 @@
 
+typedef unsigned char uc;
+typedef unsigned int uint;
 
-void vec_sum(int* a, int* b, int* c, int n);
+class Member{
+private:
+  uc* occupancy, grid;
+  uint width, length, sudoku_size;
+public:
+  
+};

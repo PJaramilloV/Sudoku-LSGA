@@ -1,0 +1,3 @@
+[submodule "OpenCL-Wrapper"]
+	path = OpenCL-Wrapper
+	url = https://github.com/ProjectPhysX/OpenCL-Wrapper.git
