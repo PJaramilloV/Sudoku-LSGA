@@ -11,6 +11,6 @@ if(OpenCL_FOUND)
 endif()
 
 
-set(CPU_SOURCES main.cpp kernel.cpp)
+set(CPU_SOURCES main.cpp member.cpp)
 add_executable(${PROJECT_NAME}CPU ${CPU_SOURCES})
 
