@@ -6,6 +6,7 @@
 #include "member.h"
 
 
+
 struct Times {
   long create_data;
   long execution;
@@ -153,6 +154,8 @@ void local_search_block(){
 
 
 int main(int argc, char* argv[]) {
+  string solution = "918745632532619784647283915286534179394178256751926843169457328825361497473892561";
+  string editable = "001011111100010101110101011100101001011111110100101001110101011101010001111110100";
   for(int i=0; i<POPULATION_SIZE; i++){
     population[i] = Member(sudoku_n);
   }

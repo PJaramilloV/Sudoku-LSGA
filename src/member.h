@@ -1,8 +1,10 @@
 #include <memory>
 #include <random>
+#include <string>
 #include <unordered_set>
 
 using std::vector;
+using std::string;
 
 typedef unsigned char uc;
 typedef unsigned int uint;
@@ -48,9 +50,10 @@ public:
   uint set(uint row, uint col, uint value);     // set value at global idx
   uint idx(uint i, uint j) const;               // global i,j idx
   uint bidx(uint i, uint j, uint block) const;  // i,j idx relative to block
-  void load_sudoku(int *hints);
+  void load_sudoku(string solution, const string& not_hints);
 
   // operator overrides
+  friend std::ostream & operator<<(std::ostream &os, const Member &member);// Display member to console
   bool operator==(const Member &other) const;
   bool operator!=(const Member &other) const;
   Member &operator=(const Member &member);
