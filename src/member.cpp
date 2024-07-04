@@ -189,7 +189,7 @@ uint Member::non_given_n(uint row) {
 void Member::load_sudoku(string solution, const string& not_hints) {
   uint i = 0;
   for(auto &c: not_hints){
-    uint hint = (c=='0')? '1': '0'; // cell occupied by hint if it is not editable
+    uc hint = (c=='0')? '1': '0'; // cell occupied by hint if it is not editable
     occupancy[i] = hint;
     grid[i] = hint? solution.at(i) : 0; // apply hint, else leave as 0 to symbolize empty
   }
@@ -201,16 +201,16 @@ void print_grid(std::unique_ptr<uc[]> grid,  uint block_width, uint width, std::
     uint i=0;
     for(uint col=0; col<width; col++) {
       uc val = grid[row*width+col];
-      os << (val? val : " ") << " ";
-
+      os << (val ? reinterpret_cast<const char *>(val) : " ") << " ";
       i += 1;
       if(i==block_width){
         i = 0;
         os << " ";
       }
     }
-    os << "\n"
+    os << "\n";
   }
+  os << "\n";
 }
 
 std::ostream & operator<<(std::ostream &os, const Member &member){// Display matrix to console
