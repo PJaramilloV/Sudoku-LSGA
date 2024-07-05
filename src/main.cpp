@@ -17,15 +17,18 @@ struct Times {
 Times t;
 uint MAX_GENERATIONS = 10;
 uint POPULATION_SIZE = 150;
+uint ELITE_SIZE = 50;
 uint generations = 10; // 10000
-uint sudoku_n;
+uint sudoku_n = 9;
+uint best_score = sudoku_n*2+1;
 float PC1=0.2, PC2=0.1, PM1=0.3, PM2=0.05;
 vector<Member> population;
+vector<Member> elite;
 vector<uint> scores;
 std::random_device generator;
-rand_float random(0,1);
+rand_float randfloat(0,1);
 rand_uint randint(0,POPULATION_SIZE);
-Member bestSudoker;
+Member best_sudoker;
 
 template <typename T>
 T get_another(const vector<T> vec, const T&not_this){
@@ -39,12 +42,12 @@ T get_another(const vector<T> vec, const T&not_this){
 
 void crossover(){
   for(auto &member: population){
-    if(random(generator) < PC1){
+    if(randfloat(generator) < PC1){
       // select second parent from population
       Member fuck_buddy = get_another(population, member);
       Member child = member;
       for(uint r=0; r<sudoku_n; r++){
-        if(random(generator) < PC2){
+        if(randfloat(generator) < PC2){
           // parents exchange rows
           child.exchange(r, fuck_buddy);
         }
@@ -57,12 +60,12 @@ void crossover(){
 void mutation(){
   for(auto &member: population){
     for(uint r=0; r<sudoku_n; r++){
-      if(random(generator) < PM1){
+      if(randfloat(generator) < PM1){
         if(member.non_given_n(r) >= 2){
           member.mutate(r); // exchange 2 numbers in row
         }
       }
-      if(random(generator) < PM2){
+      if(randfloat(generator) < PM2){
         member.reinitialize(r); // nuke row
       }
     }
@@ -155,10 +158,19 @@ void local_search_block(){
   }
 }
 
+void elite_learning(){
+    // TODO: Replace the worst individuals with elite members
+
+    // Sort members by fitness
+    std::sort(population.begin(), population.end());
+
+    // Replace or reinitialize the worst members with a random member of the elite population
+}
 
 int main(int argc, char* argv[]) {
   string solution = "918745632532619784647283915286534179394178256751926843169457328825361497473892561";
   string editable = "001011111100010101110101011100101001011111110100101001110101011101010001111110100";
+
   // init population
   for(int i=0; i<POPULATION_SIZE; i++){
     Member m = Member(sudoku_n);
@@ -168,8 +180,9 @@ int main(int argc, char* argv[]) {
   // eval population
   std::fill(scores.begin(), scores.begin()+POPULATION_SIZE, sudoku_n*2+1);
   for(int i=0; i<POPULATION_SIZE; i++){
-    scores[i] = population[i].fitness();
+    population[i].auto_fitness();
   }
+
   while(MAX_GENERATIONS){
     // tournament selection
 
@@ -187,23 +200,24 @@ int main(int argc, char* argv[]) {
 
     // eval population
     for(int i=0; i<POPULATION_SIZE; i++){
-      scores[i] = population[i].fitness();
+      population[i].auto_fitness();
     }
 
     // elite population learning
+    elite_learning();
 
     // save best
-    // bestSudoker = ;
+    best_sudoker = population.back(); // If population is sorted
 
     // finish early if sudoku is solved
-    if(bestSudoker.fitness() == 0) break;
+    if(best_sudoker.fitness() == 0) break;
 
     MAX_GENERATIONS--;
   }
-  std::cout << "The best solution found is\n " << bestSudoker;
-  uint final_score = scores[0];
-  if(final_score){
-    std::cout << "It made " << final_score << "mistakes\n";
+  std::cout << "The best solution found is\n " << best_sudoker;
+  best_score = scores[0];
+  if(best_score){
+    std::cout << "It made " << best_score << " mistakes\n";
   } else {
     std::cout <<  "It is a correct solution!\n";
   }
