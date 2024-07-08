@@ -62,14 +62,16 @@ public:
   uint set(uint row, uint col, uint value);      // set value at global idx
   uint block_get(uint row, uint col, uint block);// get value from block
   uint block_set(uint row, uint col, uint block, uint value);
+  uint get_block_width();
 
   uint idx(uint i, uint j) const;                // global i,j idx
   uint bidx(uint i, uint j, uint block) const;   // i,j idx relative to block
   void load_sudoku(string solution, const string &not_hints);
 
-  uint get_block_width();
+
 
   std::unique_ptr<uc[]> get_grid();
+  bool sanity_check();
 
   // operator overrides
   friend std::ostream &operator<<(std::ostream &os, const Member &member);// Display member to console

@@ -87,8 +87,13 @@ void mutation() {
       }
       if (randfloat(generator) < PM2) {
         member.reinitialize(r); // nuke row
+        bool good = member.sanity_check();
+        if(not good){
+          printf("help\n");
+        }
       }
     }
+
   }
 }
 
@@ -230,7 +235,7 @@ int main(int argc, char *argv[]) {
   // eval population
   for (int mit = 0; mit < POPULATION_SIZE; mit++) {
     Member someone = population[mit];
-    someone.auto_fitness(); // TODO: solve SEGFAULT, indef of mit on this line
+    someone.auto_fitness();
     if (mit == 149) {
       std::cout << "hi mom\n";
     }
@@ -254,7 +259,7 @@ int main(int argc, char *argv[]) {
 
     // eval population
     for (int i = 0; i < POPULATION_SIZE; i++) {
-      population[i].auto_fitness();
+      population[i].auto_fitness(); // TODO: solve why grid and occupancy become NULL on certain members, can be fathers or not.
     }
 
     // Sort members by fitness

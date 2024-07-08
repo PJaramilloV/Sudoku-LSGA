@@ -45,9 +45,22 @@ void Member::row_guess(uint row) {
   std::shuffle(nums.begin(), nums.end(), rng);
   for (int col = 0; col < width; col++) {
     uint i = idx(row, col);
+    if(occupancy[i])
+      continue;
     grid[i] = nums.back();
     nums.pop_back();
   }
+}
+
+bool Member::sanity_check(){
+  for(uint row=0; row<width;row++){
+    for(uint col=0; col<width;col++){
+      if(grid[idx(row, col)] == 0){
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 Member::Member(const uint edge_len) : width(edge_len) {
@@ -100,22 +113,24 @@ void Member::mutate(uint row) {
 }
 
 void Member::reinitialize(uint row) {
+  uint select = 0;
   vector<uint> not_occupied(width + 1);
   for (uint col = 0; col < width; col++) {
     uint i = idx(row, col);
     if (!occupancy[i]) {
-      not_occupied[col] = grid[i];
+      not_occupied[select] = grid[i];
+      select++;
     }
   }
 
-  std::shuffle(std::begin(not_occupied), std::end(not_occupied), rng);
-  uint select = 0;
+  std::shuffle(std::begin(not_occupied), std::begin(not_occupied)+select, rng);
+  select = 0;
   for (uint col = 0; col < width; col++) {
     uint i = idx(row, col);
     if (!occupancy[i]) {
       grid[i] = not_occupied[select];
+      select++;
     }
-    select++;
   }
 }
 
