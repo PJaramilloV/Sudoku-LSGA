@@ -52,7 +52,7 @@ void crossover() {
       Member child2;
       while (true) {
         // select second parent from population
-        Member fuck_buddy = get_another(population, member);
+        Member &fuck_buddy = get_another(population, member);
         if (fuck_buddy.is_parent) {
           continue;
         }
@@ -72,8 +72,15 @@ void crossover() {
       new_population.push_back(child1);
       new_population.push_back(child2);
     } else {
-      new_population.push_back(member); // give virgin another chance in the future
+      new_population.push_back(member); // give virgin another chance in the future <- No, because then a virgin could
+      // both pass to the next generation AND be a parent
+      // To prevent that, virgins also have to be parents (of themselves)
+      member.is_parent = true;
     }
+  }
+  bool diff_size = population.size() != new_population.size();
+  if (diff_size) {
+    std::cout << "K PASO CHAVALES" << std::endl;
   }
 }
 
@@ -88,7 +95,7 @@ void mutation() {
       if (randfloat(generator) < PM2) {
         member.reinitialize(r); // nuke row
         bool good = member.sanity_check();
-        if(not good){
+        if (not good) {
           printf("help\n");
         }
       }
@@ -248,6 +255,10 @@ int main(int argc, char *argv[]) {
     // cross over
     crossover();
 
+    population.clear();
+    population = new_population;
+    new_population.clear();
+
     // mutation
     mutation();
 
@@ -275,11 +286,11 @@ int main(int argc, char *argv[]) {
     if (best_sudoker.fitness() == 0) break;
 
     MAX_GENERATIONS--;
-    population = new_population;
-    new_population.clear();
+
   }
   std::cout << "The best solution found is\n ";// << best_sudoker;
-  best_score = scores[0];
+  //best_score = scores[0];
+  best_score = best_sudoker.get_fitness();
   if (best_score) {
     std::cout << "It made " << best_score << " mistakes\n";
   } else {

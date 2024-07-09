@@ -89,12 +89,12 @@ extern rand_float randfloat;
 extern rand_uint randint;
 
 template<typename T>
-T get_another(const vector<T> vec, const T &not_this) {
-  T other;
+T& get_another(vector<T> &vec, const T &not_this) {
+  T *other = nullptr;
   do {
     uint idx = randint(generator) % vec.size();
-    other = vec[idx];
-  } while (other == not_this);
-  return other;
+    other = &vec[idx];
+  } while (*other == not_this);
+  return *other;
 }
 
