@@ -45,17 +45,17 @@ void Member::row_guess(uint row) {
   std::shuffle(nums.begin(), nums.end(), rng);
   for (int col = 0; col < width; col++) {
     uint i = idx(row, col);
-    if(occupancy[i])
+    if (occupancy[i])
       continue;
     grid[i] = nums.back();
     nums.pop_back();
   }
 }
 
-bool Member::sanity_check(){
-  for(uint row=0; row<width;row++){
-    for(uint col=0; col<width;col++){
-      if(grid[idx(row, col)] == 0){
+bool Member::sanity_check() {
+  for (uint row = 0; row < width; row++) {
+    for (uint col = 0; col < width; col++) {
+      if (grid[idx(row, col)] == 0) {
         return false;
       }
     }
@@ -85,6 +85,7 @@ Member &Member::operator=(const Member &member) {
     grid[i] = member.grid[i];
     occupancy[i] = member.occupancy[i];
   }
+  score = member.score;
   return *this;
 }
 
@@ -123,7 +124,7 @@ void Member::reinitialize(uint row) {
     }
   }
 
-  std::shuffle(std::begin(not_occupied), std::begin(not_occupied)+select, rng);
+  std::shuffle(std::begin(not_occupied), std::begin(not_occupied) + select, rng);
   select = 0;
   for (uint col = 0; col < width; col++) {
     uint i = idx(row, col);
@@ -169,6 +170,7 @@ uint Member::fitness() {
     mistakes += bad_col(i);
     mistakes += bad_block(i);
   }
+  score = mistakes;
   return mistakes;
 }
 
@@ -328,33 +330,32 @@ void Member::load_sudoku(string solution, const string &not_hints) {
   initial_guess();
 }
 
-//std::unique_ptr<uc[]> Member::get_grid() {
-//  return grid;
-//}
-//
-//void print_grid(uc* grid, uint block_width, uint width, std::ostream os) {
-//  for (uint row = 0; row < width; row++) {
-//    os << "\t";
-//    uint i = 0;
-//    for (uint col = 0; col < width; col++) {
-//      uc val = grid[row * width + col];
-//      os << (val ? std::to_string(val) : " ") << " ";
-//      i += 1;
-//      if (i == block_width) {
-//        i = 0;
-//        os << " ";
-//      }
-//    }
-//    os << "\n";
-//  }
-//  os << "\n";
-//}
-//
-//std::ostream &operator<<(std::ostream &os, const Member &member) {// Display matrix to console
-//  os << "Member: Sudoku\n [\n ";
-//  print_grid(member.get_grid(), member.get_block_width(), member.length, os);
-//  os << "]\n";
-//  return os;
-//}
+std::ostream &operator<<(std::ostream &os, const Member &member) {// Display matrix to console
+  os << "Member: Sudoku\n [\n ";
+  uint width = member.width;
+  uint block_width = member.block_width;
+  auto &grid = member.grid;
+
+  for (uint row = 0; row < width; row++) {
+    os << "\t";
+    uint i = 0;
+    for (uint col = 0; col < width; col++) {
+      uc val = grid[row * width + col];
+      os << (val ? std::to_string(val) : " ") << " ";
+      i += 1;
+      if (i == block_width) {
+        i = 0;
+        os << " ";
+      }
+    }
+    os << "\n";
+    if ((row+1) % block_width == 0) {
+      os << "\n";
+    }
+  }
+  os << "\n";
+  os << "]\n";
+  return os;
+}
 
 

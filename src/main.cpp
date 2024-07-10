@@ -23,7 +23,7 @@ rand_uint randint(0, POPULATION_SIZE);
 
 uint MAX_GENERATIONS = 10;
 uint ELITE_SIZE = 50;
-uint generations = 10; // 10000
+uint generations = 10000; // 10000
 uint sudoku_n = 9;
 uint best_score = sudoku_n * 2 + 1;
 float PC1 = 0.2, PC2 = 0.1, PM1 = 0.3, PM2 = 0.05;
@@ -43,44 +43,51 @@ uint zeros_from_right(uint bitmask, uint skip = 0) {
 }
 
 void crossover() {
+  uint virgin_count = population.size();
+
   for (auto &member: population) {
     if (member.is_parent) {
       continue;
     }
-    if (randfloat(generator) < PC1) {
+    if (randfloat(generator) < PC1 && virgin_count >= 2) {
       Member child1 = member;
       Member child2;
-      while (true) {
-        // select second parent from population
-        Member &fuck_buddy = get_another(population, member);
-        if (fuck_buddy.is_parent) {
-          continue;
-        }
-        child2 = fuck_buddy;
-        for (uint r = 0; r < sudoku_n; r++) {
-          if (randfloat(generator) < PC2) {
-            // parents exchange rows
-            child1.exchange(r, fuck_buddy);
-            child2.exchange(r, member);
-          }
-        }
-        member.is_parent = true;
-        fuck_buddy.is_parent = true;
-        break;
+
+      uint fuck_buddy_idx = randint(generator) % population.size();
+      Member *fuck_buddy = &population[fuck_buddy_idx];
+      while (fuck_buddy->is_parent || *fuck_buddy == member) {
+        fuck_buddy_idx = (fuck_buddy_idx + 1) % population.size();
+        fuck_buddy = &population[fuck_buddy_idx];
       }
+
+      child2 = *fuck_buddy;
+      for (uint r = 0; r < sudoku_n; r++) {
+        if (randfloat(generator) < PC2) {
+          // parents exchange rows
+          child1.exchange(r, *fuck_buddy);
+          child2.exchange(r, member);
+        }
+      }
+      member.is_parent = true;
+      fuck_buddy->is_parent = true;
+
       // save offspring
       new_population.push_back(child1);
       new_population.push_back(child2);
+
+      virgin_count -= 2;
     } else {
       new_population.push_back(member); // give virgin another chance in the future <- No, because then a virgin could
       // both pass to the next generation AND be a parent
       // To prevent that, virgins also have to be parents (of themselves)
       member.is_parent = true;
+
+      virgin_count -= 1;
     }
   }
   bool diff_size = population.size() != new_population.size();
   if (diff_size) {
-    std::cout << "K PASO CHAVALES" << std::endl;
+    std::cout << "K PASO CHAVALES " << new_population.size() << std::endl;
   }
 }
 
@@ -241,13 +248,13 @@ int main(int argc, char *argv[]) {
   }
   // eval population
   for (int mit = 0; mit < POPULATION_SIZE; mit++) {
-    Member someone = population[mit];
+    Member &someone = population[mit];
     someone.auto_fitness();
     if (mit == 149) {
       std::cout << "hi mom\n";
     }
   }
-  std::sort(population.begin(), population.end());
+  //std::sort(population.begin(), population.end());
 
   while (MAX_GENERATIONS) {
     // tournament selection
@@ -270,7 +277,8 @@ int main(int argc, char *argv[]) {
 
     // eval population
     for (int i = 0; i < POPULATION_SIZE; i++) {
-      population[i].auto_fitness(); // TODO: solve why grid and occupancy become NULL on certain members, can be fathers or not.
+      Member &member = population[i];
+      member.auto_fitness(); // TODO: solve why grid and occupancy become NULL on certain members, can be fathers or not.
     }
 
     // Sort members by fitness
@@ -286,13 +294,13 @@ int main(int argc, char *argv[]) {
     if (best_sudoker.fitness() == 0) break;
 
     MAX_GENERATIONS--;
-
   }
-  std::cout << "The best solution found is\n ";// << best_sudoker;
+  std::cout << "The best solution found is\n " << best_sudoker;
   //best_score = scores[0];
   best_score = best_sudoker.get_fitness();
   if (best_score) {
     std::cout << "It made " << best_score << " mistakes\n";
+    std::cout << "Worst score: " << population.front().get_fitness() << "\n";
   } else {
     std::cout << "It is a correct solution!\n";
   }
