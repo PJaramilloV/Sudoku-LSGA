@@ -5,7 +5,6 @@
 #include <ctime>
 #include "member.h"
 
-
 struct Times {
     long create_data;
     long execution;
@@ -116,6 +115,7 @@ void local_search_cols() {
     // record all illegals
     vector<uint> illegals = member.illegal_cols();
     for (auto &col: illegals) {
+      if (illegals.size() == 1) continue;
       bool able[member.length];
       for (uint i = 0; i < member.length; i++) {
         able[i] = true;
@@ -148,6 +148,7 @@ void local_search_cols() {
         }
       }
     }
+
   }
 }
 
@@ -163,7 +164,21 @@ void local_search_block() {
         able[i] = true;
       }
 
-      uint other = get_another(illegals, block); // randomly select another
+      //uint other = get_another(illegals, block); // randomly select another TODO FROM THE SAME BLOCK ROW
+      uint other_idx = randint(generator) % illegals.size();
+      uint *other_ptr = &illegals[other_idx];
+      bool same_row = block / 3 == *other_ptr / 3;
+      uint tries = illegals.size();
+      while ((block == *other_ptr || !same_row) && tries--) {
+        other_idx = (other_idx + 1) % illegals.size();
+        other_ptr = &illegals[other_idx];
+        same_row = block / 3 == *other_ptr / 3;
+      }
+      if (tries == 0) { // no block was found
+        continue;
+      }
+      uint other = *other_ptr;
+
       uint a_spotted = 0, b_spotted = 0;
       uint a_mask = member.repeat_block_mask(block, a_spotted); // get mask of repeated numbers in block
       uint b_mask = member.repeat_block_mask(other, b_spotted);
@@ -206,19 +221,20 @@ void local_search_block() {
           uint a_col = zeros_from_right(rmask_a);  // 0b 001 001 000
           uint b_col = zeros_from_right(rmask_b);  // 0b 000 110 000
 
-          uint a_num = member.block_get(row, a_col, block);
-          uint b_num = member.block_get(row, b_col, other);
+          uint a_num = member.block_get(row, a_col % 3, block);
+          uint b_num = member.block_get(row, b_col % 3, other);
           // if repeat numbers do not exist in both blocks  -- should be taken care of already
           //if(in_a_n_not_b & 1<<(a_num-1) && in_b_n_not_a & 1<<(b_num-1)) {
           //if(!member.num_in_block(a_num, other) && !member.num_in_block(b_num, block)){
           if (able[a_num] && able[b_num]) {
             // swap
-            member.block_set(row, a_col, block, b_num);
-            member.block_set(row, b_col, other, a_num);
+            member.block_set(row, a_col % 3, block, b_num);
+            member.block_set(row, b_col % 3, other, a_num);
 
             able[a_num] = false;
             able[b_num] = false;
           }
+          member.row_check();
 
           rmask_a ^= 1 << a_col;
           rmask_b ^= 1 << b_col;
@@ -236,6 +252,12 @@ void elite_learning() {
   // Replace or reinitialize the worst members with a random member of the elite population
 }
 
+void populatio_row_check() {
+  for (auto &member: population) {
+    member.row_check();
+  }
+}
+
 int main(int argc, char *argv[]) {
   string solution = "918745632532619784647283915286534179394178256751926843169457328825361497473892561";
   string editable = "001011111100010101110101011100101001011111110100101001110101011101010001111110100";
@@ -250,9 +272,6 @@ int main(int argc, char *argv[]) {
   for (int mit = 0; mit < POPULATION_SIZE; mit++) {
     Member &someone = population[mit];
     someone.auto_fitness();
-    if (mit == 149) {
-      std::cout << "hi mom\n";
-    }
   }
   //std::sort(population.begin(), population.end());
 
@@ -261,6 +280,7 @@ int main(int argc, char *argv[]) {
 
     // cross over
     crossover();
+    populatio_row_check();
 
     population.clear();
     population = new_population;
@@ -268,12 +288,16 @@ int main(int argc, char *argv[]) {
 
     // mutation
     mutation();
+    populatio_row_check();
+
 
     // column LS
     local_search_cols();
+    populatio_row_check();
 
     // Sub-block LS
     local_search_block();
+    populatio_row_check();
 
     // eval population
     for (int i = 0; i < POPULATION_SIZE; i++) {
@@ -282,7 +306,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Sort members by fitness
-    std::sort(population.begin(), population.end());
+    std::sort(population.begin(), population.end(), std::greater<Member>());
+    //std::reverse(population.begin(),population.end());
 
     // TODO: elite population learning
     //elite_learning();
@@ -294,6 +319,9 @@ int main(int argc, char *argv[]) {
     if (best_sudoker.fitness() == 0) break;
 
     MAX_GENERATIONS--;
+  }
+  for (auto &member: population) {
+    std::cout << member.get_fitness() << std::endl;
   }
   std::cout << "The best solution found is\n " << best_sudoker;
   //best_score = scores[0];

@@ -17,12 +17,17 @@ class Member {
 private:
   std::unique_ptr<uc[]> occupancy, grid;
   const uint width = 9;
-  uint sudoku_size, block_width, checksum, score;
+public:
+    const uint get_width() const;
+
+private:
+    uint sudoku_size, block_width, checksum, score;
 
 
   void _init(const uint edge_len);
 
   uint bad_col(int c);      // 1 if col has repeated numbers
+  uint bad_row(int r);      // 1 if row has repeated numbers
   uint bad_block(int b);    // 1 if block has repeated numbers
   uint check_sum(uint *arr);// 1 if sum(arr) == summation of k from 1 to width
 
@@ -72,6 +77,7 @@ public:
 
   std::unique_ptr<uc[]> get_grid();
   bool sanity_check();
+  bool row_check();
 
   // operator overrides
   friend std::ostream &operator<<(std::ostream &os, const Member &member);// Display member to console

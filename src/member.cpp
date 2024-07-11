@@ -137,14 +137,14 @@ void Member::reinitialize(uint row) {
 
 uint Member::check_sum(uint *arr) {
   uint sum = 0;
-  for (int r = 0; r < width; r++) {
+  for (int r = 1; r <= width; r++) {
     sum += arr[r];
   }
   return sum != checksum;
 }
 
 uint Member::bad_col(int c) {
-  uint col[width + 1];
+  uint col[width + 1] = { 0 }; //uint col[10]
   for (int r = 0; r < width; r++) {
     uint val = grid[idx(r, c)];
     col[val] = val;
@@ -152,8 +152,17 @@ uint Member::bad_col(int c) {
   return check_sum(col);
 }
 
+uint Member::bad_row(int r) {
+  uint row[width + 1] = { 0 }; //uint row[10]
+  for (int c = 0; c < width; c++) {
+    uint val = grid[idx(r, c)];
+    row[val] = val;
+  }
+  return check_sum(row);
+}
+
 uint Member::bad_block(int b) {
-  uint block[width + 1];
+  uint block[width + 1] = { 0 }; // uint block[10]
   for (int i = 0; i < block_width; i++) {
     for (int j = 0; j < block_width; j++) {
       uint val = grid[bidx(i, j, b)];
@@ -353,9 +362,21 @@ std::ostream &operator<<(std::ostream &os, const Member &member) {// Display mat
       os << "\n";
     }
   }
-  os << "\n";
   os << "]\n";
   return os;
+}
+
+const uint Member::get_width() const {
+  return width;
+}
+
+bool Member::row_check() {
+  for (uint row = 0; row < width; row++) {
+    if (bad_row(row)) {
+      std::cout << "FILA MALA" << std::endl;
+    }
+  }
+  return true;
 }
 
 
