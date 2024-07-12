@@ -41,6 +41,23 @@ uint zeros_from_right(uint bitmask, uint skip = 0) {
   return res;
 }
 
+uint *get_another_illegal_block_in_row(uint block, vector<uint> &illegals) {
+  uint other_idx = randint(generator) % illegals.size();
+  uint *other_ptr = &illegals[other_idx];
+  bool same_row = block / 3 == *other_ptr / 3;
+  uint tries = illegals.size();
+  while ((block == *other_ptr || !same_row) && tries--) {
+    other_idx = (other_idx + 1) % illegals.size();
+    other_ptr = &illegals[other_idx];
+    same_row = block / 3 == *other_ptr / 3;
+  }
+  if (tries == 0) { // no block was found
+    return nullptr;
+  }
+  return other_ptr;
+}
+
+
 void crossover() {
   uint virgin_count = population.size();
 
@@ -164,19 +181,8 @@ void local_search_block() {
         able[i] = true;
       }
 
-      //uint other = get_another(illegals, block); // randomly select another TODO FROM THE SAME BLOCK ROW
-      uint other_idx = randint(generator) % illegals.size();
-      uint *other_ptr = &illegals[other_idx];
-      bool same_row = block / 3 == *other_ptr / 3;
-      uint tries = illegals.size();
-      while ((block == *other_ptr || !same_row) && tries--) {
-        other_idx = (other_idx + 1) % illegals.size();
-        other_ptr = &illegals[other_idx];
-        same_row = block / 3 == *other_ptr / 3;
-      }
-      if (tries == 0) { // no block was found
-        continue;
-      }
+      uint *other_ptr = get_another_illegal_block_in_row(block, illegals);
+      if (other_ptr == nullptr) continue;
       uint other = *other_ptr;
 
       uint a_spotted = 0, b_spotted = 0;
@@ -206,8 +212,8 @@ void local_search_block() {
         if (a_mask & (1 << i)) {
           uint a_num = member.block_get(i / rows, i % rows, block);
           // but number is in B, unmark
-          if (b_spotted & 1 << (a_num - 1)) {
-            a_mask ^= 1 << i;
+          if (b_spotted & (1 << (a_num - 1))) {
+            a_mask ^= (1 << i);
           }
         }
       }
@@ -217,7 +223,7 @@ void local_search_block() {
         uint rmask_b = b_mask & (0b111 << (row * 3));
 
         //zeros_from_right(uint) :   0b00100 --> 2  ;  0b00010 --> 1  ;  0b00001 --> 0
-        while (rmask_a && rmask_b) { // there is a repeat in both rows
+        while (rmask_a && rmask_b) { // there are repeats in both rows
           uint a_col = zeros_from_right(rmask_a);  // 0b 001 001 000
           uint b_col = zeros_from_right(rmask_b);  // 0b 000 110 000
 

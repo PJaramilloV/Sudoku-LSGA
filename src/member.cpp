@@ -276,7 +276,7 @@ uint Member::repeat_col_mask(uint col) {
 uint Member::repeat_block_mask(uint block, uint &spotted) {
   uint mask = 0;     // block mask of repeated positions
   //uint spotted = 0;  // starts as 0b000 000 000
-  uint first_spotted[width];  // array to store first spotted positions
+  uint first_spotted[width] = {0};  // array to store first spotted positions
   for (uint row = 0; row < block_width; row++) {
     for (uint col = 0; col < block_width; col++) {
       uint i = bidx(row, col, block);
