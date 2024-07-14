@@ -159,13 +159,13 @@ void local_search_cols() {
               // swap
               member.set(row, col, b_num);
               member.set(row, other, a_num);
+              member.hint_check();
             }
           }
           row++;
         }
       }
     }
-
   }
 }
 
@@ -258,9 +258,15 @@ void elite_learning() {
   // Replace or reinitialize the worst members with a random member of the elite population
 }
 
-void populatio_row_check() {
+void population_row_check() {
   for (auto &member: population) {
     member.row_check();
+  }
+}
+
+void population_hint_check() {
+  for (auto &member: population) {
+    member.hint_check();
   }
 }
 
@@ -281,12 +287,14 @@ int main(int argc, char *argv[]) {
   }
   //std::sort(population.begin(), population.end());
 
+  population_hint_check();
   while (MAX_GENERATIONS) {
     // tournament selection
 
     // cross over
     crossover();
-    populatio_row_check();
+    population_row_check();
+    population_hint_check();
 
     population.clear();
     population = new_population;
@@ -294,21 +302,24 @@ int main(int argc, char *argv[]) {
 
     // mutation
     mutation();
-    populatio_row_check();
+    population_row_check();
+    population_hint_check();
 
 
     // column LS
     local_search_cols();
-    populatio_row_check();
+    population_row_check();
+    population_hint_check();
 
     // Sub-block LS
     local_search_block();
-    populatio_row_check();
+    population_row_check();
+    population_hint_check();
 
     // eval population
     for (int i = 0; i < POPULATION_SIZE; i++) {
       Member &member = population[i];
-      member.auto_fitness(); // TODO: solve why grid and occupancy become NULL on certain members, can be fathers or not.
+      member.auto_fitness();
     }
 
     // Sort members by fitness

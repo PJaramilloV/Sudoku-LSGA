@@ -75,9 +75,10 @@ public:
 
 
 
-  std::unique_ptr<uc[]> get_grid();
+  std::unique_ptr<uc[]> &get_grid();
   bool sanity_check();
-  bool row_check();
+  void row_check();
+  void hint_check();
 
   // operator overrides
   friend std::ostream &operator<<(std::ostream &os, const Member &member);// Display member to console

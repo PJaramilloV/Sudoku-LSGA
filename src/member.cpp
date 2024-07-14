@@ -8,6 +8,9 @@
 
 using std::unordered_set;
 
+string not_hints_str;
+string solution_str;
+
 void Member::_init(const uint edge_len) {
   this->block_width = uint(sqrt(edge_len));
   if (block_width * block_width != width) {
@@ -255,19 +258,22 @@ bool Member::num_in_block(uint value, uint block) {
 uint Member::repeat_col_mask(uint col) {
   uint mask = 0;     // mask of repeated positions
   uint spotted = 0;  // mask of spotted values, starts as 0b000 000 000
-  uint first_spotted[width];  // array to store first spotted positions
+  uint first_spotted[width] = {0};  // array to store first spotted positions
   for (uint row = 0; row < width; row++) {
     uint i = idx(row, col);
     uint val = grid[i]; // find 2
     uint c_val = val - 1;
     uint bin_val = 1 << c_val;       // 2 is 0b000 000 010
+    // if value has been spotted before
+    uc not_hint = !occupancy[i];
     if (spotted & bin_val) {    // a repeated 2 is declared by 0b000 000 010 & 0b000 000 010 ---> true
-      uc not_hint = !occupancy[i];
+      // if not a hint, mark as repeated
       mask |= (not_hint << row);       // mark position of repeated 2
+      // if not a hint, also mark the first spotted position
       mask |= not_hint ? first_spotted[c_val] : 0;
     } else {
       spotted |= bin_val;     // store 2 as spotted as 0b000 000 010
-      first_spotted[c_val] = 1 << row;
+      first_spotted[c_val] = not_hint << row;
     }
   }
   return mask;
@@ -283,13 +289,13 @@ uint Member::repeat_block_mask(uint block, uint &spotted) {
       uint val = grid[i]; // find 2
       uint c_val = val - 1;
       uint bin_val = 1 << c_val;       // 2 is 0b000 000 010
+      uc not_hint = !occupancy[i];
       if (spotted & bin_val) {
-        uc not_hint = !occupancy[i];
         mask |= not_hint << (row * block_width + col); // mark position of 2
         mask |= not_hint ? first_spotted[c_val] : 0;
       } else {
         spotted |= bin_val;                   // store 2 as 0b000 000 010
-        first_spotted[c_val] = 1 << row;
+        first_spotted[c_val] = not_hint << (row * block_width + col);
       }
     }
   }
@@ -329,6 +335,8 @@ uint Member::get_block_width() {
 }
 
 void Member::load_sudoku(string solution, const string &not_hints) {
+  not_hints_str = not_hints;
+  solution_str = solution;
   uint i = 0;
   for (auto &c: not_hints) {
     uc hint = (c == '0') ? 1 : 0; // cell occupied by hint if it is not editable
@@ -370,13 +378,28 @@ const uint Member::get_width() const {
   return width;
 }
 
-bool Member::row_check() {
+void Member::row_check() {
   for (uint row = 0; row < width; row++) {
     if (bad_row(row)) {
       std::cout << "FILA MALA" << std::endl;
     }
   }
-  return true;
 }
 
+void Member::hint_check() {
+  uint i = 0;
+  uint err_count = 0;
+  for (auto &c: not_hints_str) {
+    uc hint = (c == '0') ? 1 : 0; // cell occupied by hint if it is not editable
+    if (occupancy[i] != hint || (hint && grid[i] != (solution_str[i] - '0'))) {
+      err_count++;
+      std::cout << "HINTS CAMBIARON!" << std::endl;
+    }
+    i++;
+  }
+}
+
+std::unique_ptr<uc[]> &Member::get_grid() {
+  return grid;
+}
 
