@@ -20,14 +20,13 @@ std::default_random_engine rng = std::default_random_engine{generator()};
 rand_float randfloat(0, 1);
 rand_uint randint(0, POPULATION_SIZE);
 
-uint MAX_GENERATIONS = 10;
+uint MAX_GENERATIONS = 100;
 uint ELITE_SIZE = 50;
 uint generations = 10000; // 10000
 uint sudoku_n = 9;
 uint best_score = sudoku_n * 2 + 1;
 float PC1 = 0.2, PC2 = 0.1, PM1 = 0.3, PM2 = 0.05;
-vector<Member> population, new_population;
-vector<Member> elite;
+vector<Member> population, new_population, elite;
 vector<uint> scores;
 
 Member best_sudoker;
@@ -251,11 +250,31 @@ void local_search_block() {
 }
 
 void elite_learning() {
-  // TODO: Replace the worst individuals with elite members
+  if (elite.empty()) {
+    return;
+  }
+  uint idx = randint(generator) % elite.size();
+  Member &random_elite = elite[idx];
+  float Pb = (float)(population[0].get_fitness() - random_elite.get_fitness())/(float)population[0].get_fitness();
+  if (Pb < 0) {
+    std::cout << "AAAAAAAAAAAAAAAHHHHHHHHHHHHHH" << std::endl;
+  }
+  if (randfloat(generator) < Pb) {
+    // Replace the worst individual with a random elite member
+    population[0] = random_elite;
+  }
+  else{
+    // Reinitialize worst member
+    for (uint row = 0; row < sudoku_n; row++) {
+      population[0].reinitialize(row);
+    }
+    population[0].auto_fitness();
+  }
 
 
+  // update elite
+  elite.clear();
 
-  // Replace or reinitialize the worst members with a random member of the elite population
 }
 
 void population_row_check() {
@@ -327,7 +346,7 @@ int main(int argc, char *argv[]) {
     //std::reverse(population.begin(),population.end());
 
     // TODO: elite population learning
-    //elite_learning();
+    elite_learning();
 
     // save best
     best_sudoker = population.back(); // If population is sorted
@@ -337,9 +356,11 @@ int main(int argc, char *argv[]) {
 
     MAX_GENERATIONS--;
   }
-  for (auto &member: population) {
-    std::cout << member.get_fitness() << std::endl;
-  }
+  population_hint_check();
+  population_row_check();
+  //for (auto &member: population) {
+  //  std::cout << member.get_fitness() << std::endl;
+  //}
   std::cout << "The best solution found is\n " << best_sudoker;
   //best_score = scores[0];
   best_score = best_sudoker.get_fitness();

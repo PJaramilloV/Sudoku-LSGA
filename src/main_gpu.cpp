@@ -231,16 +231,41 @@ uint best_sudoker = 300;
 uint block_width = 3;
 sudoku_n = block_width*block_width;
 uint sudoku_space = sudoku_n*sudoku_n;
+uc* tmp;
 Memory<uc> grid(device, sudoku_space*POPULATION_SIZE);
+Memory<uc> new_grid(device, sudoku_space*POPULATION_SIZE);
 Memory<uc> occupancy(device, sudoku_space*POPULATION_SIZE);
 Memory<uc> non_given(device, sudoku_n*POPULATION_SIZE);
 Memory<uc> mistakes(device, sudoku_n*2*POPULATION_SIZE);
 Memory<uc> scores(device, POPULATION_SIZE);
+Memory<int> crossoverMap(device, POPULATION_SIZE);
 Kernel fitnessColKernel(grid, mistakes);
 Kernel fitnessBlockKernel(grid, mistakes);
 Kernel mistakesAddKernel(mistakes, scores);
+Kernel crossoverKernel(grid, new_grid, crossoverMap, rand_a, rand_b, seed, chance);
 Kernel mutateRowKernel(grid, non_given, rand_a, rand_b, seed, chance);
 Kernel reinitRowKernel(grid, non_given, rand_a, rand_b, seed, chance);
+Kernel lsga_col_kernel(grid, occupancy, mistakes, POPULATION_SIZE);
+Kernel lsga_block_kernel(grid, occupancy, mistakes, POPULATION_SIZE);
+
+void prepare_crossover(){
+  std::vector<int> indices(POPULATION_SIZE);
+  std::iota(indices.begin(), indices.end(), 0);
+  std::shuffle(indices.begin(), indices.end(), generator);
+  for(int i=0; i<POPULATION_SIZE; i++){
+    crossoverMap[i] = -1;
+  }
+  int half = POPULATION_SIZE/2;
+  for(int i=0; i<half; i++){
+    int idx = indices[i];
+    int val = indices[idx];
+    float random_val = randfloat(generator);
+    int make_crossover = (random_val < PC1) && (val ^ idx);
+    int dont_crossover = (!make_crossover) & -1;
+    crossoverMap[idx] = (make_crossover & val) | dont_crossover;
+    crossoverMap[val] = (make_crossover & idx) | dont_crossover;
+  }
+}
 
 std::vector<uint> sort_scores_idxs(Memory<uc> &scores, uc size) {
   // Create a vector of indices
@@ -269,6 +294,7 @@ int main(int argc, char *argv[]) {
       uc hint = (c == '0') ? 1 : 0;
       occupancy[i] = hint;
       grid[i] = hint ? (solution.at(i) - '0') : 0;
+      new_grid[i] = hint ? (solution.at(i) - '0') : 0;
       s++;
     }
   }
@@ -286,11 +312,12 @@ int main(int argc, char *argv[]) {
     // tournament selection
 
     // cross over
-    crossover();
+    prepare_crossover();
+    crossoverKernel.run();
 
-    population.clear();
-    population = new_population;
-    new_population.clear();
+    tmp = grid.exchange_host_buffer(tmp);      // old <--> empty
+    tmp = new_grid.exchange_host_buffer(tmp);  // new <--> old
+    tmp = grid.exchange_host_buffer(tmp);      // empty <--> new
 
     // mutation
     // 1 thread --> 1 row
@@ -299,7 +326,7 @@ int main(int argc, char *argv[]) {
 
     // column LS
     fitnessColKernel.enqueue();
-    local_search_cols();
+    lsga_col_kernel.run();
 
     // Sub-block LS
     fitnessColKernel.enqueue();

@@ -147,7 +147,7 @@ uint Member::check_sum(uint *arr) {
 }
 
 uint Member::bad_col(int c) {
-  uint col[width + 1] = { 0 }; //uint col[10]
+  uint col[width + 1] = {0}; //uint col[10]
   for (int r = 0; r < width; r++) {
     uint val = grid[idx(r, c)];
     col[val] = val;
@@ -156,7 +156,7 @@ uint Member::bad_col(int c) {
 }
 
 uint Member::bad_row(int r) {
-  uint row[width + 1] = { 0 }; //uint row[10]
+  uint row[width + 1] = {0}; //uint row[10]
   for (int c = 0; c < width; c++) {
     uint val = grid[idx(r, c)];
     row[val] = val;
@@ -165,7 +165,7 @@ uint Member::bad_row(int r) {
 }
 
 uint Member::bad_block(int b) {
-  uint block[width + 1] = { 0 }; // uint block[10]
+  uint block[width + 1] = {0}; // uint block[10]
   for (int i = 0; i < block_width; i++) {
     for (int j = 0; j < block_width; j++) {
       uint val = grid[bidx(i, j, b)];
@@ -199,9 +199,12 @@ uint Member::idx(uint i, uint j) const {
 }
 
 uint Member::bidx(uint i, uint j, uint block) const {
+  if (i >= block_width || j >= block_width) {
+    std::cout << "NOOOOO" << std::endl;
+  }
   uint b_row = block / block_width;
   uint b_col = block % block_width;
-  uint up_left_corner = b_col * block_width + b_row;
+  uint up_left_corner = b_row * width * block_width + b_col * block_width;
   return up_left_corner + idx(i, j);
 }
 
@@ -366,7 +369,7 @@ std::ostream &operator<<(std::ostream &os, const Member &member) {// Display mat
       }
     }
     os << "\n";
-    if ((row+1) % block_width == 0) {
+    if ((row + 1) % block_width == 0) {
       os << "\n";
     }
   }
