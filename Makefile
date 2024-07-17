@@ -3,13 +3,10 @@ PROJECT=MyProject
 
 .PHONY: init clean test run
 
-all: cl cpu cuda
+all: cl cpu
 
 init:
 	@cmake -S . -B $(BUILD)
-
-cuda: init
-	@cmake --build $(BUILD) --target $(PROJECT)CUDA -j 10
 
 cl: init
 	@cp src/cl/kernel.cl $(BUILD)/src/cl/kernel.cl

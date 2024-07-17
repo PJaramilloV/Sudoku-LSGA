@@ -1,8 +1,5 @@
 #include <chrono>
-#include <fstream>
 #include <iostream>
-#include <cstdlib>
-#include <ctime>
 #include "member.h"
 
 struct Times {
@@ -21,13 +18,11 @@ std::default_random_engine rng = std::default_random_engine{generator()};
 rand_float randfloat(0, 1);
 rand_uint randint(0, POPULATION_SIZE);
 
-uint MAX_GENERATIONS = 4000;
-uint generations = 10000; // 10000
+uint MAX_GENERATIONS = 200;
 uint sudoku_n = 9;
 uint best_score = sudoku_n * 2 + 1;
 float PC1 = 0.2, PC2 = 0.1, PM1 = 0.3, PM2 = 0.05;
 vector<Member> population, new_population, elite;
-vector<uint> scores;
 
 Member best_sudoker;
 
@@ -68,23 +63,23 @@ void crossover() {
       Member child1 = member;
       Member child2;
 
-      uint fuck_buddy_idx = randint(generator) % population.size();
-      Member *fuck_buddy = &population[fuck_buddy_idx];
-      while (fuck_buddy->is_parent || *fuck_buddy == member) {
-        fuck_buddy_idx = (fuck_buddy_idx + 1) % population.size();
-        fuck_buddy = &population[fuck_buddy_idx];
+      uint partner_idx = randint(generator) % population.size();
+      Member *partner = &population[partner_idx];
+      while (partner->is_parent || *partner == member) {
+        partner_idx = (partner_idx + 1) % population.size();
+        partner = &population[partner_idx];
       }
 
-      child2 = *fuck_buddy;
+      child2 = *partner;
       for (uint r = 0; r < sudoku_n; r++) {
         if (randfloat(generator) < PC2) {
           // parents exchange rows
-          child1.exchange(r, *fuck_buddy);
+          child1.exchange(r, *partner);
           child2.exchange(r, member);
         }
       }
       member.is_parent = true;
-      fuck_buddy->is_parent = true;
+      partner->is_parent = true;
 
       // save offspring
       new_population.push_back(child1);
@@ -92,18 +87,13 @@ void crossover() {
 
       virgin_count -= 2;
     } else {
-      new_population.push_back(member); // give virgin another chance in the future <- No, because then a virgin could
-      // both pass to the next generation AND be a parent
-      // To prevent that, virgins also have to be parents (of themselves)
+      new_population.push_back(member);
       member.is_parent = true;
 
       virgin_count -= 1;
     }
   }
   bool diff_size = population.size() != new_population.size();
-  if (diff_size) {
-    std::cout << "K PASO CHAVALES " << new_population.size() << std::endl;
-  }
 }
 
 void mutation() {
@@ -157,7 +147,6 @@ void local_search_cols() {
               // swap
               member.set(row, col, b_num);
               member.set(row, other, a_num);
-              //member.hint_check();
             }
           }
           row++;
@@ -190,23 +179,6 @@ void local_search_block() {
 
       for (uint i = 0; i < rows * rows; i++) {
         // if number is marked as repeated
-        /*   a          b
-         * 1 2 3      6 9 3
-         * 4 5 2      1 6 4
-         * 7 8 9      5 7 8
-         *
-         * a_mask -> 0b000 100 010
-         * b_mask -> 0b000 010 001
-         *
-         * a_spotted -> 0b000 000 010   (2)
-         * b_spotted -> 0b000 100 000   (6)
-         *
-         * i = 1
-         * a_mask & 1<<i (0b10) == true (si numero en cuestion es repetido en a)
-         * a_num = 2
-         *
-         * (b_spotted & 1<<(a_num-1)) (0b1) == false
-         */
         if (a_mask & (1 << i)) {
           uint a_num = member.block_get(i / rows, i % rows, block);
           // but number is in B, unmark
@@ -228,8 +200,6 @@ void local_search_block() {
           uint a_num = member.block_get(row, a_col % 3, block);
           uint b_num = member.block_get(row, b_col % 3, other);
           // if repeat numbers do not exist in both blocks  -- should be taken care of already
-          //if(in_a_n_not_b & 1<<(a_num-1) && in_b_n_not_a & 1<<(b_num-1)) {
-          //if(!member.num_in_block(a_num, other) && !member.num_in_block(b_num, block)){
           if (able[a_num] && able[b_num]) {
             // swap
             member.block_set(row, a_col % 3, block, b_num);
@@ -238,7 +208,6 @@ void local_search_block() {
             able[a_num] = false;
             able[b_num] = false;
           }
-          //member.row_check();
 
           rmask_a ^= 1 << a_col;
           rmask_b ^= 1 << b_col;
@@ -256,9 +225,6 @@ void elite_learning() {
 
     // Calc. reinitialization probability
     float Pb = (float) (population[0].get_fitness() - random_elite.get_fitness()) / (float) population[0].get_fitness();
-    if (Pb < 0) {
-      std::cout << "AAAAAAAAAAAAAAAHHHHHHHHHHHHHH" << std::endl;
-    }
 
     if (randfloat(generator) < Pb) {
       // Replace the worst individual with a random elite member
@@ -294,8 +260,6 @@ void elite_learning() {
     for (int i = 0; i < ELITE_SIZE; i++) {
       elite.push_back(population[population.size() - 1 - i]);
     }
-  } else {
-    std::cout << "IMPOSIBLE" << std::endl;
   }
 }
 
@@ -311,7 +275,7 @@ void population_hint_check() {
   }
 }
 
-int main(int argc, char *argv[]) {
+int main() {
   string solution = "918745632532619784647283915286534179394178256751926843169457328825361497473892561";
   string editable = "001011111100010101110101011100101001011111110100101001110101011101010001111110100";
 
@@ -326,16 +290,12 @@ int main(int argc, char *argv[]) {
     Member &someone = population[mit];
     someone.auto_fitness();
   }
-  //std::sort(population.begin(), population.end());
 
   population_hint_check();
+  population_row_check();
   while (MAX_GENERATIONS) {
-    // tournament selection
-
-    // cross over
+    // crossover
     crossover();
-    //population_row_check();
-    //population_hint_check();
 
     population.clear();
     population = new_population;
@@ -343,19 +303,12 @@ int main(int argc, char *argv[]) {
 
     // mutation
     mutation();
-    //population_row_check();
-    //population_hint_check();
-
 
     // column LS
     local_search_cols();
-    //population_row_check();
-    //population_hint_check();
 
     // Sub-block LS
     local_search_block();
-    //population_row_check();
-    //population_hint_check();
 
     // eval population
     for (int i = 0; i < POPULATION_SIZE; i++) {
@@ -365,7 +318,6 @@ int main(int argc, char *argv[]) {
 
     // Sort members by fitness
     std::sort(population.begin(), population.end(), std::greater<>());
-    //std::reverse(population.begin(),population.end());
 
     // TODO: elite population learning
     elite_learning();
@@ -380,11 +332,7 @@ int main(int argc, char *argv[]) {
   }
   population_hint_check();
   population_row_check();
-  //for (auto &member: population) {
-  //  std::cout << member.get_fitness() << std::endl;
-  //}
   std::cout << "The best solution found is\n " << best_sudoker;
-  //best_score = scores[0];
   best_score = best_sudoker.get_fitness();
   if (best_score) {
     std::cout << "It made " << best_score << " mistakes\n";
