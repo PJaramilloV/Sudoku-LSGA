@@ -15,13 +15,13 @@ struct Times {
 
 Times t;
 uint POPULATION_SIZE = 150;
+uint ELITE_SIZE = 50;
 std::random_device generator;
 std::default_random_engine rng = std::default_random_engine{generator()};
 rand_float randfloat(0, 1);
 rand_uint randint(0, POPULATION_SIZE);
 
-uint MAX_GENERATIONS = 100;
-uint ELITE_SIZE = 50;
+uint MAX_GENERATIONS = 4000;
 uint generations = 10000; // 10000
 uint sudoku_n = 9;
 uint best_score = sudoku_n * 2 + 1;
@@ -122,7 +122,6 @@ void mutation() {
         }
       }
     }
-
   }
 }
 
@@ -158,7 +157,7 @@ void local_search_cols() {
               // swap
               member.set(row, col, b_num);
               member.set(row, other, a_num);
-              member.hint_check();
+              //member.hint_check();
             }
           }
           row++;
@@ -239,7 +238,7 @@ void local_search_block() {
             able[a_num] = false;
             able[b_num] = false;
           }
-          member.row_check();
+          //member.row_check();
 
           rmask_a ^= 1 << a_col;
           rmask_b ^= 1 << b_col;
@@ -250,31 +249,54 @@ void local_search_block() {
 }
 
 void elite_learning() {
-  if (elite.empty()) {
-    return;
-  }
-  uint idx = randint(generator) % elite.size();
-  Member &random_elite = elite[idx];
-  float Pb = (float)(population[0].get_fitness() - random_elite.get_fitness())/(float)population[0].get_fitness();
-  if (Pb < 0) {
-    std::cout << "AAAAAAAAAAAAAAAHHHHHHHHHHHHHH" << std::endl;
-  }
-  if (randfloat(generator) < Pb) {
-    // Replace the worst individual with a random elite member
-    population[0] = random_elite;
-  }
-  else{
-    // Reinitialize worst member
-    for (uint row = 0; row < sudoku_n; row++) {
-      population[0].reinitialize(row);
+  if (elite.size() == ELITE_SIZE) {
+    // Select random elite member
+    uint idx = randint(generator) % elite.size();
+    Member random_elite = elite[idx];
+
+    // Calc. reinitialization probability
+    float Pb = (float) (population[0].get_fitness() - random_elite.get_fitness()) / (float) population[0].get_fitness();
+    if (Pb < 0) {
+      std::cout << "AAAAAAAAAAAAAAAHHHHHHHHHHHHHH" << std::endl;
     }
-    population[0].auto_fitness();
+
+    if (randfloat(generator) < Pb) {
+      // Replace the worst individual with a random elite member
+      population[0] = random_elite;
+    } else {
+      // Reinitialize the worst member
+      for (uint row = 0; row < sudoku_n; row++) {
+        population[0].reinitialize(row);
+      }
+      population[0].auto_fitness();
+    }
+
+    // elite is ordered asc
+    std::sort(elite.begin(), elite.end());
+    // population is ordered desc
+    std::sort(population.begin(), population.end(), std::greater<>());
+
+    uint elite_idx = elite.size() - 1;
+    uint pop_idx = population.size() - 1;
+    while (elite[elite_idx].get_fitness() > population[pop_idx].get_fitness() && elite_idx > 0 && pop_idx > 0) {
+      // Current best is better than elite
+      elite_idx--;
+    }
+    // replace the worst elite members with the bests from current population
+    while(elite_idx < ELITE_SIZE && elite[elite_idx] > population[pop_idx]) {
+      elite[elite_idx] = population[pop_idx];
+      pop_idx--;
+      elite_idx++;
+    }
+
+  } else if (elite.empty()) {
+    // initialize elite population with the best individuals
+    for (int i = 0; i < ELITE_SIZE; i++) {
+      elite.push_back(population[population.size() - 1 - i]);
+    }
+  } else {
+    std::cout << "IMPOSIBLE" << std::endl;
   }
-
-
-  // update elite
-  elite.clear();
-
 }
 
 void population_row_check() {
@@ -312,8 +334,8 @@ int main(int argc, char *argv[]) {
 
     // cross over
     crossover();
-    population_row_check();
-    population_hint_check();
+    //population_row_check();
+    //population_hint_check();
 
     population.clear();
     population = new_population;
@@ -321,19 +343,19 @@ int main(int argc, char *argv[]) {
 
     // mutation
     mutation();
-    population_row_check();
-    population_hint_check();
+    //population_row_check();
+    //population_hint_check();
 
 
     // column LS
     local_search_cols();
-    population_row_check();
-    population_hint_check();
+    //population_row_check();
+    //population_hint_check();
 
     // Sub-block LS
     local_search_block();
-    population_row_check();
-    population_hint_check();
+    //population_row_check();
+    //population_hint_check();
 
     // eval population
     for (int i = 0; i < POPULATION_SIZE; i++) {
@@ -342,7 +364,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Sort members by fitness
-    std::sort(population.begin(), population.end(), std::greater<Member>());
+    std::sort(population.begin(), population.end(), std::greater<>());
     //std::reverse(population.begin(),population.end());
 
     // TODO: elite population learning
