@@ -197,10 +197,10 @@ Kernel reinitRowKernel( // TODO: create this
     grid, non_given,
     randint(generator), randint(generator), seed,
     PM2, POPULATION_SIZE);
-Kernel lsga_col_kernel( // TODO: define method to get other col
+Kernel lsga_col_kernel( // TODO: uncomment & define method to get other col
     device, POPULATION_SIZE, "lsga_col_kernel",
     grid, occupancy, mistakes, POPULATION_SIZE);
-Kernel lsga_block_kernel( // TODO: create this
+Kernel lsga_block_kernel( // TODO: create this & uncomment
     device, POPULATION_SIZE, "lsga_block_kernel",
     grid, occupancy, mistakes, POPULATION_SIZE);
 Kernel elite_learning_kernel( // TODO: create this
