@@ -199,9 +199,6 @@ uint Member::idx(uint i, uint j) const {
 }
 
 uint Member::bidx(uint i, uint j, uint block) const {
-  if (i >= block_width || j >= block_width) {
-    std::cout << "NOOOOO" << std::endl;
-  }
   uint b_row = block / block_width;
   uint b_col = block % block_width;
   uint up_left_corner = b_row * width * block_width + b_col * block_width;
@@ -396,7 +393,7 @@ void Member::hint_check() {
     uc hint = (c == '0') ? 1 : 0; // cell occupied by hint if it is not editable
     if (occupancy[i] != hint || (hint && grid[i] != (solution_str[i] - '0'))) {
       err_count++;
-      std::cout << "HINTS CAMBIARON!" << std::endl;
+      std::cout << "HINTS CAMBIARON" << std::endl;
     }
     i++;
   }
