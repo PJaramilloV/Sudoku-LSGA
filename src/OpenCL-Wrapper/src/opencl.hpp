@@ -4,10 +4,14 @@
 //#define PTX
 //#define LOG
 
-#ifndef _WIN32
-#pragma GCC diagnostic ignored "-Wignored-attributes" // ignore compiler warnings for CL/cl.hpp with g++
-#endif // _WIN32
+#if defined _WIN32
 #include <CL/cl.hpp> // OpenCL 1.0, 1.1, 1.2
+#elif defined (__LINUX__) || defined(__gnu_linux__) || defined(__linux__)
+#include <CL/opencl.hpp>
+#elif defined (__APPLE__)
+#include <OpenCL/opencl.hpp>
+#endif
+
 #include "utilities.hpp"
 using cl::Event;
 

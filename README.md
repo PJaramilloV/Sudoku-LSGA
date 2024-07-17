@@ -1,19 +1,24 @@
 # Sudoku LSGA GPU 
 El presente proyecto busca implementar un algoritmo genético para resolver Sudokus en GPU y comparar el rendimiento con su versión secuencial.
 
-## Versión CPU
-Se encuentra en `src/main.cpp` y para ejecutarlo
-### Inicializar proyecto de CMake
-make init
+## Inicializar proyecto de CMake
+Desde la carpeta base `Sudoku-LSGA`:
 
-### Compilar la solución
-make build
+`make init`
+
+## Versión CPU
+Se encuentra en `src/main.cpp` y `src/member.cpp` y para ejecutarlo:
+
+### Compilar
+`make cpu`
 
 ### Ejecutar 
-./src/build/SudokuLSGACPU
+`./build/src/SudokuLSGACPU`
 
 ### (opcional linux o mac) Limpiar el proyecto
-make clean
+`make clean`
 
-## Versión GPU
-Actualmente, no es ejecutable, pero los kernels se encuentran en `extern/OpenCL-Wrapper/src/kernel.cpp`
+## Versión GPU (OpenCL)
+Actualmente, no es ejecutable, pero los kernels se encuentran en `src/OpenCL-Wrapper/src/kernel.cpp`
+### Compilar
+`make cl`
